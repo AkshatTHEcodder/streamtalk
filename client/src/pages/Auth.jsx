@@ -69,7 +69,7 @@ export default function Auth() {
       <div className="card">
         <div className="brand">
           <div className="mark">◈</div>
-          <div className="name">StreamTalk</div>
+          <div className="name">Video Platform</div>
         </div>
         <div className="title">{title}</div>
         <p className="sub">MERN-style auth UI + Express API + SMTP mail + Supabase storage.</p>

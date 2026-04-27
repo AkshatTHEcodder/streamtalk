@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Talk — Live Video & Translation</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth" class="screen">
+  <div class="lobby-bg">
+    <div class="grid-lines"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="lobby-content auth-card">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">Stream Talk</span>
+      <span class="logo-tag">auth</span>
+    </div>
+
+    <h1 class="lobby-title" style="margin-bottom:10px">Welcome back</h1>
+    <p class="lobby-sub" style="margin-bottom:18px">Sign in to join rooms and sync all activity to Supabase.</p>
+
+    <div class="auth-grid">
+      <div class="input-group">
+        <label>Supabase URL</label>
+        <input type="text" id="authSupabaseUrl" placeholder="https://xxx.supabase.co">
+      </div>
+      <div class="input-group">
+        <label>Anon Key</label>
+        <input type="password" id="authSupabaseKey" placeholder="eyJ...">
+      </div>
+    </div>
+
+    <div class="lobby-form" style="margin-top:12px">
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="you@company.com" autocomplete="email">
+      </div>
+      <div class="input-group" id="authPasswordGroup">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <div class="auth-row">
+        <button class="btn-ghost" type="button" onclick="setAuthMode('signin')">Sign in</button>
+        <button class="btn-ghost" type="button" onclick="setAuthMode('signup')">Create account</button>
+        <button class="btn-ghost" type="button" onclick="setAuthMode('magic')">Magic link</button>
+      </div>
+
+      <button class="btn-join" onclick="submitAuth()">
+        <span id="authSubmitLabel">Sign in</span>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <div class="auth-row" style="justify-content:space-between">
+        <button class="btn-link" type="button" onclick="startForgotPassword()">Forgot password?</button>
+        <button class="btn-link" type="button" onclick="continueAsDemo()">Continue as demo</button>
+      </div>
+    </div>
+
+    <div class="auth-hint" id="authHint" style="display:none"></div>
+  </div>
+</div>
+
+<!-- LOBBY SCREEN -->
+<div id="lobby" class="screen active">
+  <div class="lobby-bg">
+    <div class="grid-lines"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="lobby-content">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">Stream Talk</span>
+      <span class="logo-tag">v2.4</span>
+    </div>
+    <h1 class="lobby-title">Video. Translated.<br><em>Live.</em></h1>
+    <p class="lobby-sub">Real-time multilingual meetings with AI-powered translation, live streaming, and Supabase sync.</p>
+
+    <div class="lobby-form">
+      <div class="account-row" id="accountRow" style="display:none">
+        <div class="account-pill">
+          <span class="account-dot"></span>
+          <span id="accountEmail">—</span>
+        </div>
+        <button class="btn-ghost-sm" type="button" onclick="logout()">Logout</button>
+      </div>
+      <div class="input-group">
+        <label>Your Name</label>
+        <input type="text" id="userName" placeholder="Enter display name" value="Alex Kim">
+      </div>
+      <div class="input-group">
+        <label>Room ID</label>
+        <input type="text" id="roomId" placeholder="room-id or generate" value="talk-2024-alpha">
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Supabase URL</label>
+          <input type="text" id="supabaseUrl" placeholder="https://xxx.supabase.co">
+        </div>
+        <div class="input-group">
+          <label>Anon Key</label>
+          <input type="password" id="supabaseKey" placeholder="eyJ...">
+        </div>
+      </div>
+      <button class="btn-join" onclick="joinRoom()">
+        <span>Join Room</span>
+        <span class="btn-arrow">→</span>
+      </button>
+    </div>
+
+    <div class="lobby-features">
+      <div class="feature"><span>⚡</span> WebRTC Video</div>
+      <div class="feature"><span>🌐</span> AI Translation</div>
+      <div class="feature"><span>📡</span> Live Stream</div>
+      <div class="feature"><span>🗄️</span> Supabase Sync</div>
+    </div>
+  </div>
+</div>
+
+<!-- MEETING ROOM SCREEN -->
+<div id="room" class="screen">
+
+  <!-- Header -->
+  <header class="room-header">
+    <div class="room-logo">◈ Stream Talk</div>
+    <div class="room-info">
+      <span class="room-id-badge" id="roomBadge">—</span>
+      <div class="room-timer" id="roomTimer">00:00</div>
+    </div>
+    <div class="header-right">
+      <div class="connection-dot" id="connDot"></div>
+      <span class="conn-label" id="connLabel">Connecting...</span>
+      <button class="btn-danger-sm" onclick="endCall()">End Call</button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="room-layout">
+
+    <!-- Video Grid -->
+    <div class="video-section">
+      <div class="video-grid" id="videoGrid">
+        <!-- Tile 1: Local -->
+        <div class="video-tile local-tile active-speaker" id="tile0">
+          <div class="video-avatar" style="background: linear-gradient(135deg,#1a1a2e,#16213e)">
+            <span class="avatar-initials" id="localInitials">AK</span>
+            <div class="audio-waveform" id="wave0">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="tile-overlay">
+            <div class="tile-name" id="localName">Alex Kim <span class="you-tag">YOU</span></div>
+            <div class="translation-overlay" id="trans0"></div>
+          </div>
+          <div class="speaking-ring"></div>
+        </div>
+        <!-- Tile 2 -->
+        <div class="video-tile" id="tile1">
+          <div class="video-avatar" style="background: linear-gradient(135deg,#0f3460,#533483)">
+            <span class="avatar-initials">MR</span>
+            <div class="audio-waveform" id="wave1"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div class="tile-overlay">
+            <div class="tile-name">Maria Rodriguez</div>
+            <div class="translation-overlay" id="trans1"></div>
+          </div>
+          <div class="speaking-ring"></div>
+        </div>
+        <!-- Tile 3 -->
+        <div class="video-tile" id="tile2">
+          <div class="video-avatar" style="background: linear-gradient(135deg,#1b262c,#0a3d62)">
+            <span class="avatar-initials">TN</span>
+            <div class="audio-waveform" id="wave2"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div class="tile-overlay">
+            <div class="tile-name">Takeshi Nakamura</div>
+            <div class="translation-overlay" id="trans3"></div>
+          </div>
+          <div class="speaking-ring"></div>
+        </div>
+        <!-- Tile 4 -->
+        <div class="video-tile" id="tile3">
+          <div class="video-avatar" style="background: linear-gradient(135deg,#2d132c,#ee4540)">
+            <span class="avatar-initials">SA</span>
+            <div class="audio-waveform" id="wave3"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div class="tile-overlay">
+            <div class="tile-name">Sophie Andersson</div>
+            <div class="translation-overlay" id="trans3b"></div>
+          </div>
+          <div class="speaking-ring"></div>
+        </div>
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="controls-bar">
+        <button class="ctrl-btn" id="micBtn" onclick="toggleMic()" title="Mic">
+          <span class="ctrl-icon">🎤</span>
+          <span class="ctrl-label">Mute</span>
+        </button>
+        <button class="ctrl-btn" id="camBtn" onclick="toggleCam()" title="Camera">
+          <span class="ctrl-icon">📷</span>
+          <span class="ctrl-label">Video</span>
+        </button>
+        <button class="ctrl-btn" id="screenBtn" onclick="toggleScreen()" title="Screen Share">
+          <span class="ctrl-icon">🖥️</span>
+          <span class="ctrl-label">Share</span>
+        </button>
+        <button class="ctrl-btn active" id="transBtn" onclick="toggleTranslation()" title="Translation">
+          <span class="ctrl-icon">🌐</span>
+          <span class="ctrl-label">Translate</span>
+        </button>
+        <button class="ctrl-btn" id="recBtn" onclick="toggleRecord()" title="Record">
+          <span class="ctrl-icon">⏺</span>
+          <span class="ctrl-label">Record</span>
+        </button>
+        <button class="ctrl-btn danger" onclick="endCall()" title="End">
+          <span class="ctrl-icon">📵</span>
+          <span class="ctrl-label">End</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel">
+      <div class="panel-tabs">
+        <button class="tab-btn active" onclick="switchTab('translation')">🌐</button>
+        <button class="tab-btn" onclick="switchTab('stream')">📡</button>
+        <button class="tab-btn" onclick="switchTab('db')">🗄️</button>
+        <button class="tab-btn" onclick="switchTab('chat')">💬 <span class="chat-badge" id="chatBadge" style="display:none">!</span></button>
+      </div>
+
+      <!-- Translation Tab -->
+      <div class="tab-content active" id="tab-translation">
+        <div class="panel-title">Live AI Translation</div>
+        <div class="lang-row">
+          <div class="lang-group">
+            <label>From</label>
+            <select id="srcLang">
+              <option value="auto">Auto-detect</option>
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="ja">Japanese</option>
+              <option value="hi">Hindi</option>
+            </select>
+          </div>
+          <div class="lang-arrow">⟶</div>
+          <div class="lang-group">
+            <label>To</label>
+            <select id="tgtLang">
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="ja">Japanese</option>
+              <option value="zh">Chinese</option>
+              <option value="ar">Arabic</option>
+            </select>
+          </div>
+        </div>
+        <div class="trans-status">
+          <div class="status-dot pulsing"></div>
+          <span>Translating live...</span>
+        </div>
+        <div class="transcript-box" id="transcriptBox">
+          <div class="transcript-empty">Translation transcript will appear here...</div>
+        </div>
+      </div>
+
+      <!-- Stream Tab -->
+      <div class="tab-content" id="tab-stream">
+        <div class="panel-title">Live Streaming</div>
+        <div class="stream-toggle-row">
+          <span>Broadcast</span>
+          <label class="toggle">
+            <input type="checkbox" id="streamToggle" onchange="toggleStream()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="input-group sm">
+          <label>RTMP Stream Key</label>
+          <input type="password" id="streamKey" placeholder="rtmp://live.example.com/key" value="sk-live-xxxxxxxx">
+        </div>
+        <div class="stream-stats" id="streamStats">
+          <div class="stat-card">
+            <div class="stat-val" id="viewerCount">0</div>
+            <div class="stat-lbl">Viewers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="partCount">4</div>
+            <div class="stat-lbl">Participants</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="streamDur">—</div>
+            <div class="stat-lbl">Duration</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">8</div>
+            <div class="stat-lbl">Languages</div>
+          </div>
+        </div>
+        <div class="stream-options">
+          <label class="check-row"><input type="checkbox" checked> Live captions</label>
+          <label class="check-row"><input type="checkbox"> Voice-dubbed audio</label>
+          <label class="check-row"><input type="checkbox" checked> Record to cloud</label>
+        </div>
+        <div class="stream-badge" id="streamBadge" style="display:none">
+          <span class="live-dot"></span> LIVE
+        </div>
+      </div>
+
+      <!-- DB Tab -->
+      <div class="tab-content" id="tab-db">
+        <div class="panel-title">Supabase Integration</div>
+        <div class="db-status">
+          <div class="status-dot" id="dbDot"></div>
+          <span id="dbStatusText">Not connected</span>
+        </div>
+        <div class="db-url-display" id="dbUrlDisplay">—</div>
+
+        <div class="db-table-label">realtime_events</div>
+        <div class="db-events" id="dbEvents">
+          <div class="db-empty">No events yet...</div>
+        </div>
+
+        <div class="db-table-label" style="margin-top:12px">active_rooms</div>
+        <div class="db-room-row">
+          <span class="db-key">room_id</span>
+          <span class="db-val" id="dbRoomId">—</span>
+        </div>
+        <div class="db-room-row">
+          <span class="db-key">participants</span>
+          <span class="db-val">4</span>
+        </div>
+        <div class="db-room-row">
+          <span class="db-key">translation_active</span>
+          <span class="db-val" id="dbTransActive">true</span>
+        </div>
+        <div class="db-room-row">
+          <span class="db-key">streaming</span>
+          <span class="db-val" id="dbStreaming">false</span>
+        </div>
+      </div>
+
+      <!-- Chat Tab -->
+      <div class="tab-content" id="tab-chat">
+        <div class="panel-title">Room Chat</div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-msg">
+            <span class="chat-author">Maria Rodriguez</span>
+            <span class="chat-text">Hey! Can everyone see my screen share?</span>
+          </div>
+          <div class="chat-msg">
+            <span class="chat-author">Takeshi Nakamura</span>
+            <span class="chat-text">Yes, loud and clear 👍</span>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Send a message..." onkeydown="if(event.key==='Enter') sendChat()">
+          <button onclick="sendChat()">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
